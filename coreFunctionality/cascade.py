@@ -40,15 +40,22 @@ class Bulb:
 		self.bulb = bulb
 
 '''
-ServoDriver
+EmitterDriver
 -Stores a list of servos
 -Open ports to Arduinos
 -Stores a list of those ports
 -Creates a map of which servos are on which ports
 -Provides a way to update the angle of all servos on all ports
 '''
-class ServoDriver:
-	def __init__(self, servos, bulbs, port_types):
+class EmitterDriver:
+	def __init__(self):
+		self.servos = []
+		self.bulbs = []
+		self.ports = []
+		self.ports_types = []
+		self.last_update_time = time.clock()
+
+	def initialize(self, servos, bulbs, port_types):
 		self.servos = servos
 		self.bulbs = bulbs
 		self.ports = self.open_ports()
@@ -204,7 +211,8 @@ if __name__ == "__main__":
 		# instantiate a driver
 		# must happen inside try-finally
 		x = ''
-		driver = ServoDriver(servos, bulbs, x)
+		driver = EmitterDriver()
+		driver.initialize(servos, bulbs, x)
 		
 		iter1 = True
 		if iter1:

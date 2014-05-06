@@ -82,15 +82,27 @@ from output import GUInterface
 from output import Logger
 import threading
 import time
+from coreFunctionality import cascade
 
 #updateGUI = threading.Event()
 #emitterStates_lock = threading.Lock()
 
-myConfig = Configuration.Configuration("../config.csv")
+myConfig = Configuration.Configuration("config.csv")
 myLogger = Logger.Logger()
-myComModule = #fill in the blanks
+myComModule = cascade.EmitterDriver()
 myInstallationThread = Installation.Installation(myConfig, myLogger, myComModule)
 myLogger.obtainEmitterList(myInstallationThread.getEmitterList())
+# copy the data from the emitter data structures into the servo/bulb data structures
+servos = []
+bulbs = []
+for emitterArray in myInstallationThread.getEmitterList():
+    for emitter in emitterArray:
+        servos.append(cascade.Servo(emitter.servoPin, emitter.servoArduinoID, 45))
+        #bulbs.append()
+myComModule.initialize(servos, bulbs, '')
+for servo in myComModule.servos:
+    print "pin: " + servo.pin + " port:" + servo.port 
+#time.sleep(100)
 myInstallationThread.start()
 #myInstallation.stopOperation()
 #time.sleep(5)
