@@ -97,11 +97,11 @@ servos = []
 bulbs = []
 for emitterArray in myInstallationThread.getEmitterList():
     for emitter in emitterArray:
-        servos.append(cascade.Servo(emitter.servoPin, emitter.servoArduinoID, 45))
+        servos.append(cascade.Servo(int(emitter.servoPin), int(emitter.servoArduinoID), 45))
         #bulbs.append()
 myComModule.initialize(servos, bulbs, '')
 for servo in myComModule.servos:
-    print "pin: " + servo.pin + " port:" + servo.port 
+    print "pin: " + str(servo.pin) + " port:" + str(servo.port)
 #time.sleep(100)
 myInstallationThread.start()
 #myInstallation.stopOperation()

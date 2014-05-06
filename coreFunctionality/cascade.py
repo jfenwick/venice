@@ -117,6 +117,7 @@ class EmitterDriver:
 			for servo in self.servos:
 				#print 'servo: ' + str(servo.pin) + 'port: ' + str(servo.port)
 				# append angle to the datum for this port
+				#print servo.port
 				servo_data[servo.port] = servo_data[servo.port] + str(servo.angle).zfill(3)
 
 				# append null byte to character arrays going to arduinos to signal end of update
