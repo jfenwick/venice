@@ -104,10 +104,9 @@ for servo in myComModule.servos:
     print "pin: " + str(servo.pin) + " port:" + str(servo.port)
 #time.sleep(100)
 myInstallationThread.start()
-#myInstallation.stopOperation()
-#time.sleep(5)
-#myInstallationThread.stop()
-#print "stop issued"
-#myInstallationThread.join()
-#print "done"
+time.sleep(1)
+myInstallationThread.stop()
+print "stop issued"
+myInstallationThread.join()
+print "done"
 

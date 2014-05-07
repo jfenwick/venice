@@ -48,8 +48,8 @@ def angle_between(v1, v2):
     return angle
 
 def angle2DVector(vec):
-    x = vec[0]
-    y = vec[1]
+    x = float(vec[0])
+    y = float(vec[1])
     if x == 0 and y > 0:
         return math.pi * 0.5
     elif x == 0 and y < 0:
@@ -68,9 +68,14 @@ def angle2DVector(vec):
         return math.pi * 1.5 + math.atan(abs(x)/abs(y))
     
 def angleBetween2D(v1,v2):
+    
     av1 = angle2DVector(v1)
     av2 = angle2DVector(v2)
-    print "angle - calc : " + str(av2) + " - " + str(av1)
     angle = av2 - av1
     return angle
     
+def mapToDomain (value, min1, max1, min2, max2 ):
+    return  ( ( float(value) - float(min1) ) / ( float(max1) - float(min1) ) )*( float(max2) - float(min2) ) + float(min2)
+            
+def radToDeg(angle):
+    return angle * 180 / math.pi

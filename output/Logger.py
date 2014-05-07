@@ -3,6 +3,7 @@ Created on May 4, 2014
 
 @author: Matthias
 '''
+import math
 
 class Logger(object):
     '''
@@ -32,15 +33,16 @@ class Logger(object):
         return emitterStates
         
     def receiveState(self, emitter):
-        state = [ emitter.getState(), emitter.getAngle() ]
+        state = [ int(emitter.getState()) + int(emitter.getBulbState()), emitter.getAngle() ]
         self.emitterStates[ int( emitter.getArrLocation()[0] ) ][ int( emitter.getArrLocation()[1] ) ] = state
         
     def printArray(self, emitterStates):
+        print "printing states:"
         for emitterRow in emitterStates:
             print (10*len(emitterRow)+1)*"-"
             entry = ""
             for i in range(len(emitterRow)):
-                entry += "|" + "{0:.2f}".format(emitterRow[i][1]).rjust(8, " ")+" "
+                entry += "|" + "{0:.2f}".format(self.radToDeg(emitterRow[i][1])).rjust(8, " ")+" "
             entry += "|\n"
             entry += (10*len(emitterRow)+1)*"-"+"\n"
             for i in range(len(emitterRow)):
@@ -49,7 +51,8 @@ class Logger(object):
             print entry
             print (10*len(emitterRow)+1)*"-"+"\n"
             
-            
+    def radToDeg(self, angle):
+        return angle * 180 / math.pi
             
             
             

@@ -24,9 +24,12 @@ class Emitter(object):
         self.state = False                             #TRUE for master, FALSE for slave
         #self.range = self.determineRange()       #list of (xMin, xMax, yMin, yMax)
         self.target = None                      #key of tracked target in installation's target dictionary
-        self.influence = 2
+        self.influence = 3
         self.slaves = None
         self.commands = list()
+        self.bulbActive = False
+        self.secondaryTarget = None
+        self.rangeExtension = self.installation.getRSpacing()
         
     """
     checks for targets in range
@@ -34,11 +37,11 @@ class Emitter(object):
     communicates state to installation
     """
     def determineStatus(self):
-        print "determining status of emiiter " + str(self.arrLocation)
+        #print "determining status of emiiter " + str(self.arrLocation)
         #retrieve targets in emitter-range from installation as dictionary
         trackedTargetsInRange = self.installation.targetsInRange(self.range)
-        print "targets in Range: " + str(trackedTargetsInRange)
-        print "emitter-range: " +str(self.range)
+        #print "targets in Range: " + str(trackedTargetsInRange)
+        #print "emitter-range: " +str(self.range)
         
         if trackedTargetsInRange:
             #emitter has targets in range
@@ -54,22 +57,35 @@ class Emitter(object):
                 self.beMaster()
                 
         else:
-            #no targets in range
+            extRange = [ self.range[0] - self.rangeExtension, self.range[1] + self.rangeExtension, self.range[2], self.range[3]  ]
+            print "Range = " + str(self.range)
+            print "extRange = " + str(extRange)
+            trackedTargetsInExtRange = self.installation.targetsInRange(extRange)
             
-            self.beSlave()
-        print "emitter is " + str(self.state)
+            if trackedTargetsInExtRange:
+                print "target in ext range"
+                self.secondaryTarget = self.determineClosestTarget(trackedTargetsInExtRange)
+                self.beMaster()
+            else:
+                #no targets in range
+            
+                self.beSlave()
+        #print "emitter is " + str(self.state)
         self.communicateState()
+    
+    def targetXDistance(self, targetID):
+        return float(self.installation.getTarget(targetID)[0]) - float(self.phyLocation[0])
     
     """
     determine which slaves are influenced by master-emitter
     """
     def getSlaves(self):
-        print "looking for slaves"
+        #print "looking for slaves"
         self.slaves = list()
-        #path 1 
-        i=0
         x=int(self.arrLocation[0])
         y=int(self.arrLocation[1])
+        #path 1 
+        i=0
         while i < self.influence:
             i += 1
             
@@ -80,6 +96,8 @@ class Emitter(object):
             
             if not slaveCandidate.isMaster():
                 self.slaves.append(slaveCandidate)
+            else:
+                break
                 
         #path 2
         i=0
@@ -93,71 +111,9 @@ class Emitter(object):
             
             if not slaveCandidate.isMaster():
                 self.slaves.append(slaveCandidate)
-        
-        #path 3
-        j = False
-        i = 0 
-        while i < self.influence:
-            
-            try: 
-                slaveCandidate = self.installation.getEmitter(x-1,y-i)
-            except:
-                break
-            
-            if not slaveCandidate.isMaster():
-                j = True
-                self.slaves.append(slaveCandidate)
-                
-            i += 1
-            
-        #path 4
-        if j:
-            i = 1 
-            while i < self.influence:
-                
-                try: 
-                    slaveCandidate = self.installation.getEmitter(x-1,y+i)
-                except:
-                    break
-                
-                if not slaveCandidate.isMaster():
-                    self.slaves.append(slaveCandidate)
-                    
-                i += 1
-        
-        #path 5
-        j = False
-        i=0 
-        while i < self.influence:
-            
-            try: 
-                slaveCandidate = self.installation.getEmitter(x+1,y-i)
-            except:
-                break
-            
-            if not slaveCandidate.isMaster():
-                j = True
-                self.slaves.append(slaveCandidate)
-                
-            i += 1
-            
-        #path 6
-        if j:
-            i=1 
-            while i < self.influence:
-                
-                try: 
-                    slaveCandidate = self.installation.getEmitter(x+1,y+i)
-                except:
-                    break
-                
-                if not slaveCandidate.isMaster():
-                    self.slaves.append(slaveCandidate)
-    
-                    
-                i += 1
-        
-        print "my slaves:" + str(self.slaves)
+            else:
+                break       
+
     """
     targetList is a dictionary of targets k = targetID v = point
     returns ID/key of closest Point
@@ -204,15 +160,35 @@ class Emitter(object):
             maxY = maxYLoc[1]
         
         self.range = (int(minX), int(maxX), int(minY), int(maxY))
-        #print "self.range = " + str(self.range)
+        print "self.arrLocation = " + str(self.arrLocation)
+        print "self.range = " + str(self.range)
         
     def updateAngle(self, masterOrSlave):
         if not masterOrSlave == self.state:
             return
         
         if self.state:
-            self.angle = self.angleToTarget()
-            
+            if self.target:
+                self.angle = self.angleToTarget(self.installation.getTarget(self.target))
+            elif self.secondaryTarget:
+                distance = self.targetXDistance(self.secondaryTarget)
+                print "distance " + str(distance)
+                maxAngle = abs(self.angleToTarget( [ float(self.range[1])-float(self.phyLocation[0]),0, 1000 ] ))
+                print "maxAngle = " + str(vm.radToDeg(maxAngle))
+                if distance > 0:
+                    relevantRange = self.range[1]
+                    outOfRange = distance - relevantRange
+                    self.angle = vm.mapToDomain(outOfRange, 0, abs(relevantRange), maxAngle, 0)
+                elif distance < 0:
+                    relevantRange = self.range[0]
+                    outOfRange = distance + relevantRange
+                    print "oor " + str(outOfRange)
+                    
+                    self.angle = vm.mapToDomain(outOfRange, 0, -1 * float(abs(relevantRange)), -1 * float(maxAngle), 0)
+                else:
+                    raise Exception("Evil's afoot!")
+                
+                
         elif not self.state:
             i = 0
             comComb = 0
@@ -223,18 +199,18 @@ class Emitter(object):
                 self.angle = 0
             else:
                 self.angle = comComb/i
-        print "angle: " + str(self.angle)
+        #print "angle: " + str(self.angle)
                                             
     def commandSlaves(self):
-        print "slave commanded"
+        #print "slave commanded"
         if self.state:
-            print "slave commanded2"
+            #print "slave commanded2"
             for slave in self.slaves:
-                print "slave commanded3"
+                #print "slave commanded3"
                 slave.receiveCommand(self.angle, self.arrLocation)
     
     def receiveCommand(self, angle, origin):
-        print "command received"
+        #print "command received"
         distance = abs(int(self.arrLocation[0]) - int(origin[0])) + abs(int(self.arrLocation[1]) - int(origin[1]))
         self.commands.append(angle * self.commandEffect(distance))
     
@@ -246,14 +222,14 @@ class Emitter(object):
     
     #def communicateStatus(self):
     
-    def angleToTarget(self):
-        target3D = self.installation.getTarget(self.target)
+    def angleToTarget(self, target):
+        target3D = target
         target2D = (int(target3D[0]), int(target3D[2]))
         location2D = (int(self.phyLocation[0]), int(self.phyLocation[2]))
         
         targetVector = vm.createVector(location2D, target2D)
         
-        targetAngle = vm.angleBetween2D((0,-1), targetVector)
+        targetAngle = vm.angleBetween2D([0,-1], targetVector)
         return targetAngle
         
     def beSlave(self):
@@ -264,6 +240,13 @@ class Emitter(object):
     def beMaster(self):
         if not self.state:
             self.state = True
+        
+        if self.target:
+            if not self.bulbActive:
+                self.bulbActive = True
+    
+    def getBulbState(self):
+        return self.bulbActive
     
     def getLocation(self):
         return self.phyLocation

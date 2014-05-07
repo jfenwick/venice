@@ -36,7 +36,7 @@ class Installation(threading.Thread):
         self.emitters = list()
         self.initiateEmitters()
         self.initiateEmittersPhase2()
-        self.trackedTargets = {"ID1":(4000, 1750, 1000), "ID2":(1000, 1750, 1000), "ID3":(4000, 3500, 1000)}
+        self.trackedTargets = {"ID1":(1000, 650, 1000)}
         self.operating = False
         self.logger = logger
         self._stop = threading.Event()
@@ -99,7 +99,10 @@ class Installation(threading.Thread):
             master.getSlaves()
         
     def getEmitter(self, x, y):
-        return self.emitters[x][y]
+        if not x < 0 and not y < 0:
+            return self.emitters[x][y]
+        else:
+            raise Exception("Index below 0... fool!")
         
     '''
     register an Emitter as a MasterEmitter by putting it into the masters list
@@ -183,12 +186,12 @@ class Installation(threading.Thread):
 
     def targetsInRange(self, eRange):
         targets = {}
-        print "range: " + str(eRange)
+        #print "range: " + str(eRange)
         for key, target in self.trackedTargets.iteritems():
-            print target
+            #print target
             if eRange[0] < target[0] and target[0] < eRange[1] and eRange[2] < target[1] and target[1] < eRange[3]:
-                print "True"
+                #print "True"
                 targets[key] = target
-            else: print "False"
+            #else: #print "False"
         return targets
                 
