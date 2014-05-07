@@ -12,14 +12,8 @@ import sys
 '''
 Servo
 Pin number, angle for servo, Arduino port servo is on
-For now the port is used as an index, so please number them going from 0-n
-
 '''
 class Servo:
-	pin = 0
-	port = 0
-	angle = 0
-
 	def __init__(self, pin, port, angle):
 		self.pin = pin
 		self.port = port
@@ -30,14 +24,22 @@ Bulb
 Pin number, on/off, Arduino port bulb is on
 '''
 class Bulb:
-	pin = 0
-	port = 0
-	on = False
-
 	def __init__(self, pin, port, bulb):
 		self.pin = pin
 		self.port = port
 		self.bulb = bulb
+
+'''
+Port
+id_num - id as specified in config
+name - name of the device on the os, also specified in config
+bulb_port - whether this arduino has servos or bulbs
+'''
+class Port:
+	def __init__(self, id_num, name, bulb_port):
+		self.id_num = id_num
+		self.name = name
+		self.bulb_port = bulb_port
 
 '''
 EmitterDriver
@@ -55,15 +57,14 @@ class EmitterDriver:
 		self.ports_types = []
 		self.last_update_time = time.clock()
 
-	def initialize(self, servos, bulbs, port_types):
+	def initialize(self, servos, bulbs, ports):
 		self.servos = servos
 		self.bulbs = bulbs
-		self.ports = self.open_ports()
-		#self.port_types = 
+		self.ports = self.open_ports(ports)
 		self.last_update_time = time.clock()
 
 	# looks for all devices that have the same name pattern as an Arduino and opens them
-	def open_ports(self):
+	def open_ports(self, ports):
 		# find arduinos
 		# note: currently this is Mac only
 		devices = glob.glob('/dev/tty.usbmodem*')
@@ -73,11 +74,14 @@ class EmitterDriver:
 			print "No Arduinos found"
 			sys.exit(1)
 
-		ports = []
 		for device in devices:
 			try:
 				# connect to serial port
-				ports.append(serial.Serial(device, 9600))
+				ser = serial.Serial(device, 9600)
+				for port in ports:
+					if port.name == device:
+						port.device = ser
+						break
 			except:
 				print 'Failed to open port'
 				sys.exit(1)
@@ -126,7 +130,8 @@ class EmitterDriver:
 			# send data to the Arduinos
 			#print servo_data
 			for port,servo_datum in zip(self.ports,servo_data):
-				port.write(servo_datum)
+				print port.id_num
+				port.device.write(servo_datum)
 			self.last_update_time = time.clock()
 
 
@@ -152,55 +157,22 @@ def servo_iter_2(total):
 
 if __name__ == "__main__":
 	# create a list of servos with mappings to ports
-	# if you have the wrong number of servos it acts weird
-	#num_servos = 32
-	num_servos = 2
+	# first arduino
+	num_servos = 35
+	pinShift = 2
 	servos = []
-	servos.append(Servo(9, 0, 40))
-	servos.append(Servo(10, 0, 40))
-	'''
-	servos.append(Servo(2, 0, 40))
-	servos.append(Servo(3, 0, 40))
-	servos.append(Servo(4, 0, 40))
-	servos.append(Servo(5, 0, 40))
-	servos.append(Servo(6, 0, 40))
-	servos.append(Servo(7, 0, 40))
-	servos.append(Servo(8, 0, 40))
-	servos.append(Servo(9, 0, 40))
-	servos.append(Servo(10, 0, 40))
-	servos.append(Servo(11, 0, 40))
-	servos.append(Servo(12, 0, 40))
-	servos.append(Servo(13, 0, 40))
-	servos.append(Servo(14, 0, 40))
-	servos.append(Servo(15, 0, 40))
-	servos.append(Servo(16, 0, 40))
-	servos.append(Servo(17, 0, 40))
-	servos.append(Servo(18, 0, 40))
-	servos.append(Servo(19, 0, 40))
-	servos.append(Servo(20, 0, 40))
-	servos.append(Servo(21, 0, 40))
-	servos.append(Servo(22, 0, 40))
-	servos.append(Servo(23, 0, 40))
-	servos.append(Servo(24, 0, 40))
-	servos.append(Servo(25, 0, 40))
-	servos.append(Servo(26, 0, 40))
-	servos.append(Servo(27, 0, 40))
-	servos.append(Servo(28, 0, 40))
-	servos.append(Servo(29, 0, 40))
-	servos.append(Servo(30, 0, 40))
-	servos.append(Servo(31, 0, 40))
-	servos.append(Servo(32, 0, 40))
-	'''
+	for i in range(0, num_servos):
+		servos.append(Servo(i+pinShift, 0, 40))
 
-	if len(servos) != num_servos:
+	# second arduino
+	for i in range(0, num_servos):
+		servos.append(Servo(i+pinShift, 1, 40))
+
+	total_servos = num_servos + num_servos
+
+	if len(servos) != total_servos:
 		print 'wrong number of servos'
 		sys.exit(1)
-
-	# comment out the next two lines if you only have 1 arduino
-	#servos.append(Servo(2, 1, 40))
-	#servos.append(Servo(3, 1, 40))
-	#servos.append(Servo(4, 2, 40))
-	#servos.append(Servo(5, 2, 40))
 
 	angles = []
 	for i in range(0,len(servos)):
@@ -211,9 +183,11 @@ if __name__ == "__main__":
 	try:
 		# instantiate a driver
 		# must happen inside try-finally
-		x = ''
+		ports = []
+		ports.append(Port(0, '/dev/tty.usbmodem141341', False))
+		ports.append(Port(1, '/dev/tty.usbmodem14141', False))
 		driver = EmitterDriver()
-		driver.initialize(servos, bulbs, x)
+		driver.initialize(servos, bulbs, ports)
 		
 		iter1 = True
 		if iter1:
