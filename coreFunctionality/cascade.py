@@ -110,7 +110,7 @@ class EmitterDriver:
 
 		# if enough time has elapsed since the last update, update arduinos
 		elapsed = (time.clock() - self.last_update_time)
-		if elapsed > 1.0:
+		if elapsed > 0.05:
 			#print 'elapsed: ' + str(elapsed)			
 			servo_data = []
 			bulb_data = []
