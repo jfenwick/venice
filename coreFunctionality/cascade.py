@@ -48,15 +48,14 @@ class ArduinoDriver:
 
 		# fill the data_store with emitters
 		for e in emitters:
-			angle = e[angleIndex]
+			angle = int(e[angleIndex])
 			angle = 90 + angle
 			# constrain the servo angle, just in case
 			if angle > 135:
 				angle = 135
 			elif angle < 45:
 				angle = 45
-			# ew
-			self.data_store[e[servoArduinoIndex]][e[servoPinIndex]] = e[angleIndex]
+			self.data_store[e[servoArduinoIndex]][e[servoPinIndex]] = angle
 
 	def updateArduinos(self):
 		# if enough time has elapsed since the last update, update arduinos
@@ -68,7 +67,7 @@ class ArduinoDriver:
 				for data in sorted_data:
 					serial_data = serial_data + str(data[1]).zfill(3)
 				serial_data = serial_data + "\0"
-				#print serial_data
+				print serial_data
 				device.port.write(serial_data)
 
 
@@ -113,16 +112,29 @@ if __name__ == "__main__":
 
 	num_emitters = 35
 	emitters = []
-	for i in range(0, num_emitters):
-		emitters.append([0, 1, i+2, i+2, 0, 0])
+
+	matdan = False
+
+	if matdan:
+		emitters = {(1, 3): ['0', '2', '9', '9', 1, 0], (2, 8): ['1', '3', '8', '8', 0, 0], (0, 7): ['0', '2', '7', '7', 0, 0], (2, 6): ['1', '3', '6', '6', 0, 0.0], (1, 6): ['0', '2', '12', '12', 0, 0], (0, 10): ['0', '2', '10', '10', 0, 0], (0, 3): ['0', '2', '3', '3', 1, 0], (2, 5): ['1', '3', '5', '5', 0, 20.504543450785103], (1, 2): ['0', '2', '8', '8', 0, 0], (2, 9): ['1', '3', '9', '9', 0, 0], (2, 0): ['1', '3', '0', '0', 0, 0], (1, 5): ['0', '2', '11', '11', 0, 0], (0, 4): ['0', '2', '4', '4', 1, 0], (1, 10): ['0', '2', '16', '16', 0, 0], (1, 1): ['0', '2', '7', '7', 0, 0], (2, 7): ['1', '3', '7', '7', 0, 0], (0, 0): ['0', '2', '0', '0', 0, 0], (2, 2): ['1', '3', '2', '2', 0, 20.504543450785103], (1, 4): ['0', '2', '10', '10', 1, 0], (2, 10): ['1', '3', '10', '10', 0, 0], (2, 1): ['1', '3', '1', '1', 0, 0.0], (0, 5): ['0', '2', '5', '5', 0, 0], (1, 9): ['0', '2', '15', '15', 0, 0], (1, 0): ['0', '2', '6', '6', 0, 0], (0, 8): ['0', '2', '8', '8', 0, 0], (0, 1): ['0', '2', '1', '1', 0, 0], (2, 4): ['1', '3', '4', '4', 2, 41.0090869015702], (0, 6): ['0', '2', '6', '6', 0, 0], (1, 8): ['0', '2', '14', '14', 0, 0], (1, 7): ['0', '2', '13', '13', 0, 0], (0, 9): ['0', '2', '9', '9', 0, 0], (2, 3): ['1', '3', '3', '3', 2, 41.0090869015702], (0, 2): ['0', '2', '2', '2', 0, 0]}
+
+	else:
+		for i in range(0, num_emitters):
+			emitters.append([0, 1, i+2, i+2, 0, 45])
 
 	driver = ArduinoDriver(emitters, paths)
 	try:
 		driver.open_ports()
 
-		for i in range(0, num_emitters):
-			emitters.append([0, 1, i+2, i+2, 0, 135])
-
+		if matdan:
+			pass
+		else:
+			for i in range(0, num_emitters):
+				if i % 2 == 0:
+					emitters.append([0, 1, i+2, i+2, 0, 45])
+				else:
+					emitters.append([0, 1, i+2, i+2, 0, -45])
+			
 		time.sleep(2)
 		print 'entering loop'
 
