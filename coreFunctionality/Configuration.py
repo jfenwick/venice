@@ -34,6 +34,9 @@ class Configuration(object):
     def getEmitterConfig (self):
         return self.emitterConfig
     
+    def getDefaultAngle(self, x, y):
+        return self.emitterConfig[x][y][5]
+    
     def getESpacing(self):
         return self.eSpacing
     

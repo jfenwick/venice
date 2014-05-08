@@ -1,234 +1,133 @@
-"""
-Control n servos on n arduinos over serial
-
-"""
-
 import glob
-import platform
+import operator
 import serial
 import sys
 import time
 
 '''
-Servo
-Pin number, angle for servo, Arduino port servo is on
-'''
-class Servo:
-	def __init__(self, pin, port, angle):
-		self.pin = pin
-		self.port = port
-		self.angle = angle
-
-'''
-Bulb
-Pin number, on/off, Arduino port bulb is on
-'''
-class Bulb:
-	def __init__(self, pin, port, bulb):
-		self.pin = pin
-		self.port = port
-		self.bulb = bulb
-
-'''
-Port
+Device
 id_num - id as specified in config
-name - name of the device on the os, also specified in config
-bulb_port - whether this arduino has servos or bulbs
+path - path to the device on the os, also specified in config
+port - open serial port connection
 '''
-class Port:
-	def __init__(self, id_num, name, bulb_port):
+class Device:
+	def __init__(self, id_num, path):
 		self.id_num = id_num
-		self.name = name
-		self.bulb_port = bulb_port
+		self.path = path
 
-'''
-EmitterDriver
--Stores a list of servos
--Open ports to Arduinos
--Stores a list of those ports
--Creates a map of which servos are on which ports
--Provides a way to update the angle of all servos on all ports
-'''
-class EmitterDriver:
-	def __init__(self):
-		self.servos = []
-		self.bulbs = []
-		self.ports = []
-		self.ports_types = []
+class ArduinoDriver:
+	def __init__(self, emitters, paths):
+		# indexes to device paths
+		self.devices = []
 		self.last_update_time = time.clock()
 
-	def initialize(self, servos, bulbs, ports):
-		self.servos = servos
-		self.bulbs = bulbs
-		self.ports = self.open_ports(ports)
-		self.last_update_time = time.clock()
+		for i,path in enumerate(paths):
+			self.devices.append(Device(i, path))
+
+		self.data_store = []
+
+		# architecture of data_store
+		# list of devices (arduinos)
+		# each index of list contains a dictionary
+		# dictionary contains keys, which are pins
+		# values of dictionary are angle/state
+		# example:
+		#[{pin:angle}, {pin:state}, {pin:angle}, {pin:state}, ...]
+		for path in paths:
+			self.data_store.append({})
+
+		self.updateEmitters(emitters)
+
+	def updateEmitters(self, emitters):
+		servoArduinoIndex = 0
+		bulbArduinoIndex = 1
+		servoPinIndex = 2
+		bulbPinIndex = 3
+		stateIndex = 4
+		angleIndex = 5
+
+		# fill the data_store with emitters
+		for e in emitters:
+			angle = e[angleIndex]
+			angle = 90 + angle
+			# constrain the servo angle, just in case
+			if angle > 135:
+				angle = 135
+			elif angle < 45:
+				angle = 45
+			# ew
+			self.data_store[e[servoArduinoIndex]][e[servoPinIndex]] = e[angleIndex]
+
+	def updateArduinos(self):
+		# if enough time has elapsed since the last update, update arduinos
+		elapsed = (time.clock() - self.last_update_time)
+		if elapsed > 0.05:
+			for device,datum in zip(self.devices,self.data_store):
+				serial_data = ''
+				sorted_data = sorted(datum.iteritems(), key=operator.itemgetter(0))
+				for data in sorted_data:
+					serial_data = serial_data + str(data[1]).zfill(3)
+				serial_data = serial_data + "\0"
+				#print serial_data
+				device.port.write(serial_data)
+
+
+			self.last_update_time = time.clock()
+			time.sleep(3)
 
 	# looks for all devices that have the same name pattern as an Arduino and opens them
-	def open_ports(self, ports):
+	def open_ports(self):
 		# find arduinos
 		# note: currently this is Mac only
-		devices = glob.glob('/dev/tty.usbmodem*')
+		found_ports = glob.glob('/dev/tty.usbmodem*')
 
-		if len(devices) == 0:
+		if len(found_ports) == 0:
 			print "No Arduinos found"
 			sys.exit(1)
 
-		if len(devices) != len(ports):
+		if len(self.devices) != len(found_ports):
 			print "Number of found Arduinos does not match configured number"
 			sys.exit(1)
 
-		for device in devices:
+		for found_port in found_ports:
 			try:
-				# connect to serial port
-				ser = serial.Serial(device, 9600)
-				for port in ports:
-					if port.name == device:
-						port.device = ser
+				for device in self.devices:
+					if device.path == found_port:
+						# connect to serial port
+						device.port = serial.Serial(found_port, 9600)
 						break
 			except:
 				print 'Failed to open port'
 				sys.exit(1)
-			
 		# need a short delay right after serial port is started for the Arduino to initialize
 		time.sleep(1)
-		return ports
-
-	# update the model with emitter information and update if enough time has passed
-	def updateEmitter(self, servoArduinoNumber, bulbArduinoNumber, emitterServoPin, emitterBulbPin, emitterState, emitterAngle):
-		emitterAngle = 90 + emitterAngle
-		# constrain the servo angle
-		if emitterAngle > 135:
-			emitterAngle = 135
-		elif emitterAngle < 45:
-			emitterAngle = 45
-
-		# find and update servo
-		for servo in self.servos:
-			if servo.pin == emitterServoPin and servo.port == servoArduinoNumber:
-				servo.angle = emitterAngle
-				#print 'updating angle:' + str(servo.angle)
-				break
-
-		# update bulb
-		# NEED BULB CODE
-
-		# if enough time has elapsed since the last update, update arduinos
-		elapsed = (time.clock() - self.last_update_time)
-		if elapsed > 0.05:
-			#print 'elapsed: ' + str(elapsed)			
-			servo_data = []
-			bulb_data = []
-			# initialize servo_data array
-			for p in self.ports:
-				servo_data.append('')
-
-			for servo in self.servos:
-				#print 'servo: ' + str(servo.pin) + 'port: ' + str(servo.port)
-				# append angle to the datum for this port
-				#print servo.port
-				servo_data[servo.port] = servo_data[servo.port] + str(servo.angle).zfill(3)
-
-				# append null byte to character arrays going to arduinos to signal end of update
-				for servo_datum in servo_data:
-					servo_datum = servo_datum + "\0"
-			print servo_data
-			# send data to the Arduinos
-			#print servo_data
-			for port,servo_datum in zip(self.ports,servo_data):
-				port.device.write(servo_datum)
-			self.last_update_time = time.clock()
-			time.sleep(3)
-
-
 
 	def close_ports(self):
 		print 'closing ports'
-		for port in self.ports:
-			port.device.close()
-
-# generates values for making a servo sweep back and forth
-def servo_iter():
-	l = []
-	for i in range(0,100):
-		l.append(-45)
-	for i in range(0,100):
-		l.append(45)
-	for pos in l:
-		yield pos
-
-def servo_iter_2(total):
-	for i in range(0,total):
-		yield i
+		for device in self.devices:
+			device.port.close()
 
 if __name__ == "__main__":
-	# create a list of servos with mappings to ports
-	# first arduino
-	num_servos = 35
-	pinShift = 2
-	servos = []
-	for i in range(0, num_servos):
-		servos.append(Servo(i+pinShift, 0, 40))
+	paths = []
+	paths.append('/dev/tty.usbmodem14141')
 
-	# second arduino
-	#for i in range(0, num_servos):
-	#	servos.append(Servo(i+pinShift, 1, 40))
+	num_emitters = 35
+	emitters = []
+	for i in range(0, num_emitters):
+		emitters.append([0, 1, i+2, i+2, 0, 0])
 
-	#total_servos = num_servos + num_servos
-	total_servos = num_servos
-
-	if len(servos) != total_servos:
-		print 'wrong number of servos'
-		sys.exit(1)
-
-	angles = []
-	for i in range(0,len(servos)):
-		angles.append(40)
-
-	bulbs = []
-
+	driver = ArduinoDriver(emitters, paths)
 	try:
-		# instantiate a driver
-		# must happen inside try-finally
-		ports = []
-		#ports.append(Port(0, '/dev/tty.usbmodem141341', False))
-		ports.append(Port(0, '/dev/tty.usbmodem14141', False))
-		driver = EmitterDriver()
-		driver.initialize(servos, bulbs, ports)
-		
-		iter1 = True
-		if iter1:
-			pos = servo_iter()
-		else:
-			pos = servo_iter_2(len(servos))
+		driver.open_ports()
+
+		for i in range(0, num_emitters):
+			emitters.append([0, 1, i+2, i+2, 0, 135])
+
+		time.sleep(2)
+		print 'entering loop'
 
 		while True:
-			try:
-				x = pos.next()
-			except StopIteration:
-				if iter1:
-					pos = servo_iter()
-				else:	
-					pos = servo_iter_2(len(servos))
-				x = pos.next()
-			# create a list of servos with ids and angles to update positions of servos
-			if iter1:
-				for servo in servos:
-					servo.angle = x
-					# update emitter data model
-					driver.updateEmitter(servo.port, 1, servo.pin, 10, False, servo.angle)
-			else:
-				for i,servo in zip(angles,servos):
-					servo.angle = i
-					# update emitter data model
-					driver.updateEmitter(servo.port, 1, servo.pin, 10, False, servo.angle)
-
-
-			for i in range(0, len(servos)):
-				if i == x:
-					angles[i] = 80
-				else:
-					angles[i] = 40
-
-	# close the serial port on exit, or you will have to unplug the arduinos to connect again
+			driver.updateEmitters(emitters)
+			driver.updateArduinos()
 	finally:
 		driver.close_ports()

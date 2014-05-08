@@ -6,7 +6,7 @@ Created on May 1, 2014
 
 import VectorMath as vm
 import math
-from output import Logger as log
+from coreFunctionality import Logger as log
 
 class Emitter(object):
     

@@ -5,8 +5,10 @@ Created on Apr 30, 2014
 '''
 
 import Emitter
-from output import Logger as log
+from coreFunctionality import Logger as log
 import threading
+import GlobalResources as gR
+from copy import deepcopy
 '''
 Installation Class
 
@@ -25,7 +27,7 @@ class Installation(threading.Thread):
     '''
     initiate installation object
     '''
-    def __init__(self, configuration, logger, comModule):
+    def __init__(self, configuration, targetCollector, logger):#, comModule):
         super(Installation, self).__init__()
         self.configuration = configuration
         self.eSpacing = 400
@@ -36,7 +38,8 @@ class Installation(threading.Thread):
         self.emitters = list()
         self.initiateEmitters()
         self.initiateEmittersPhase2()
-        self.trackedTargets = {"ID1":(1000, 650, 1000)}
+        self.targetCollector = targetCollector
+        self.trackedTargets = None #{"ID1":(1000, 650, 1000)}
         self.operating = False
         self.logger = logger
         self._stop = threading.Event()
@@ -177,9 +180,21 @@ class Installation(threading.Thread):
     
     def operate (self):
         while not self.stopped():
-            #print self.stopped()
-            self.updateEmitters()
-            self.logger.printArray(self.logger.getEmitterList())
+            if self.obtainTargets():
+                self.updateEmitters()
+                gR.emitterUpdatedFlag.set()
+    
+    def obtainTargets(self):
+        if gR.newTargetsFlag.isSet():
+            gR.newTargetsFlag.clear()
+            gR.lockMyTargets.acquire(1)
+            try: self.trackedTargets = deepcopy(gR.myTargets)
+            finally: 
+                gR.lockMyTargets.release()
+            return True
+        else:
+            return False
+            
     
     def getTarget(self, targetID):
         return self.trackedTargets[targetID]
@@ -194,4 +209,30 @@ class Installation(threading.Thread):
                 targets[key] = target
             #else: #print "False"
         return targets
+
+class EmitterStatuses(object):
+    
+    def __init__(self, configuration):
+        self.statuses = self.generateEntries(configuration)
+        
+    def generateEntries(self, configuration):
+        statuses = []
+        i = 0
+        for row in configuration.getEmitterConfig():
+            j = 0
+            emitterRow = []
+            for emitter in row:
+                emitterRow.append([configuration.getDefaultAngle(i,j), 0])
+                j += 1
+            statuses.append(emitterRow)
+            i += 1
+        return statuses
+    
+    def updateEmitter(self, emitter):
+        emArLoc = emitter.getArrLocation()
+        emStatNew = [ emitter.getState(), emitter.getAngle]
+        self.statuses[emArLoc[0]][emArLoc[1]] = 
+    
+    def printStatuses(self):
+        print self.statuses
                 

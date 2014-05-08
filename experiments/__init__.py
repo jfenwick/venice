@@ -73,7 +73,72 @@ time.sleep(3)
 var.set("asd")
 root.update()
 """
+"""
+#input experiment
 
+import cmd
+
+class InstallationControll(cmd.Cmd):
+   
+    
+    def do_greet(self, person):
+        Greet the named person
+        if person:
+            print "hi,", person
+        else:
+            print 'hi'
+    
+    def do_EOF(self, line):
+        return True
+    
+    def postloop(self):
+        print
+
+if __name__ == '__main__':
+    InstallationControll().cmdloop()
+    print "done"
+
+
+"""
+
+
+#shared resources experiment
+
+import threading
+import time
+import DataGen
+import globalVars as gv
+
+class Printer(threading.Thread):
+    
+    def __init__(self, data):
+        super(Printer, self).__init__()
+        self.data = data
+        
+    def run(self):
+        while 1:
+            gv.dataLock.acquire(1)
+            try:
+            
+                print self.data
+            finally:
+                gv.dataLock.release()
+                    
+            if gv.dataFlag.isSet():
+                return
+
+
+dataGenThread = DataGen.DataGen(gv.data)
+printThread = Printer(gv.data)
+
+printThread.start()
+dataGenThread.start()
+
+printThread.join()
+dataGenThread.join()
+print "done"
+
+"""
 #MAIN
 from coreFunctionality import Configuration
 from coreFunctionality import Installation
@@ -113,3 +178,4 @@ print "stop issued"
 myInstallationThread.join()
 print "done"
 
+"""
