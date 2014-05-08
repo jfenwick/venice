@@ -106,6 +106,7 @@ class EmitterDriver:
 		for servo in self.servos:
 			if servo.pin == emitterServoPin and servo.port == servoArduinoNumber:
 				servo.angle = emitterAngle
+				#print 'updating angle:' + str(servo.angle)
 				break
 
 		# update bulb
@@ -136,7 +137,7 @@ class EmitterDriver:
 			for port,servo_datum in zip(self.ports,servo_data):
 				port.device.write(servo_datum)
 			self.last_update_time = time.clock()
-			time.sleep(1)
+			time.sleep(3)
 
 
 

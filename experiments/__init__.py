@@ -97,11 +97,11 @@ servos = []
 bulbs = []
 for emitterArray in myInstallationThread.getEmitterList():
     for emitter in emitterArray:
-        servos.append(cascade.Servo(int(emitter.servoPin), int(emitter.servoArduinoID), 45))
+        servos.append(cascade.Servo(int(emitter.servoPin), int(emitter.servoArduinoID), 90))
         #bulbs.append()
 ports = []
-ports.append(cascade.Port(0, '/dev/tty.usbmodem141341', False))
-ports.append(cascade.Port(1, '/dev/tty.usbmodem14141', False))
+ports.append(cascade.Port(0, '/dev/tty.usbmodem14141', False))
+#ports.append(cascade.Port(1, '/dev/tty.usbmodem141341', False))
 myComModule.initialize(servos, bulbs, ports)
 for servo in myComModule.servos:
     print "pin: " + str(servo.pin) + " port:" + str(servo.port)

@@ -262,7 +262,7 @@ class Emitter(object):
 
     def communicateAngle(self):
         self.installation.logger.receiveState(self)
-        self.installation.getComModule().updateEmitter(self.servoArduinoID, self.relayArduinoID, self.servoPin, self.relayPin, self.state, math.degrees(self.angle))
+        self.installation.getComModule().updateEmitter(int(self.servoArduinoID), int(self.relayArduinoID), int(self.servoPin), int(self.relayPin), self.state, int(math.degrees(self.angle)))
     
     def getState(self):
         return self.state
