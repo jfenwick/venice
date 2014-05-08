@@ -68,10 +68,13 @@ class EmitterDriver:
 		# find arduinos
 		# note: currently this is Mac only
 		devices = glob.glob('/dev/tty.usbmodem*')
-		print devices
 
 		if len(devices) == 0:
 			print "No Arduinos found"
+			sys.exit(1)
+
+		if len(devices) != len(ports):
+			print "Number of found Arduinos does not match configured number"
 			sys.exit(1)
 
 		for device in devices:
@@ -85,7 +88,6 @@ class EmitterDriver:
 			except:
 				print 'Failed to open port'
 				sys.exit(1)
-
 			
 		# need a short delay right after serial port is started for the Arduino to initialize
 		time.sleep(1)
@@ -130,7 +132,6 @@ class EmitterDriver:
 			# send data to the Arduinos
 			#print servo_data
 			for port,servo_datum in zip(self.ports,servo_data):
-				print port.id_num
 				port.device.write(servo_datum)
 			self.last_update_time = time.clock()
 
@@ -139,7 +140,7 @@ class EmitterDriver:
 	def close_ports(self):
 		print 'closing ports'
 		for port in self.ports:
-			port.close()
+			port.device.close()
 
 # generates values for making a servo sweep back and forth
 def servo_iter():
@@ -165,10 +166,11 @@ if __name__ == "__main__":
 		servos.append(Servo(i+pinShift, 0, 40))
 
 	# second arduino
-	for i in range(0, num_servos):
-		servos.append(Servo(i+pinShift, 1, 40))
+	#for i in range(0, num_servos):
+	#	servos.append(Servo(i+pinShift, 1, 40))
 
-	total_servos = num_servos + num_servos
+	#total_servos = num_servos + num_servos
+	total_servos = num_servos
 
 	if len(servos) != total_servos:
 		print 'wrong number of servos'
@@ -184,8 +186,8 @@ if __name__ == "__main__":
 		# instantiate a driver
 		# must happen inside try-finally
 		ports = []
-		ports.append(Port(0, '/dev/tty.usbmodem141341', False))
-		ports.append(Port(1, '/dev/tty.usbmodem14141', False))
+		#ports.append(Port(0, '/dev/tty.usbmodem141341', False))
+		ports.append(Port(0, '/dev/tty.usbmodem14141', False))
 		driver = EmitterDriver()
 		driver.initialize(servos, bulbs, ports)
 		
