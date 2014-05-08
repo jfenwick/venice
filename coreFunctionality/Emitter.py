@@ -14,8 +14,8 @@ class Emitter(object):
         self.phyLocation = phyLocation          #coorinates of physical location
         #print "initiating emitter at: " + str(self.phyLocation)
         self.arrLocation = arrLocation          #coordinates in emitterArray
-        self.angle = 0
-        self.defaulAngle = defaultAngle         #pre-configured default servo-position
+        self.defaultAngle = float(defaultAngle) 
+        self.angle = defaultAngle
         self.installation = installation        #parent installation-object
         self.relayArduinoID = relayArduinoID
         self.servoArduinoID = servoArduinoID
@@ -169,7 +169,7 @@ class Emitter(object):
         
         if self.state:
             if self.target:
-                self.angle = self.angleToTarget(self.installation.getTarget(self.target))
+                self.setAngle(self.angleToTarget(self.installation.getTarget(self.target)))
             elif self.secondaryTarget:
                 distance = self.targetXDistance(self.secondaryTarget)
                 #print "distance " + str(distance)
@@ -178,13 +178,13 @@ class Emitter(object):
                 if distance > 0:
                     relevantRange = self.range[1]
                     outOfRange = distance - relevantRange
-                    self.angle = vm.mapToDomain(outOfRange, 0, abs(relevantRange), maxAngle, 0)
+                    self.setAngle(vm.mapToDomain(outOfRange, 0, abs(relevantRange), maxAngle, 0))
                 elif distance < 0:
                     relevantRange = self.range[0]
                     outOfRange = distance + relevantRange
                     #print "oor " + str(outOfRange)
                     
-                    self.angle = vm.mapToDomain(outOfRange, 0, -1 * float(abs(relevantRange)), -1 * float(maxAngle), 0)
+                    self.setAngle( vm.mapToDomain(outOfRange, 0, -1 * float(abs(relevantRange)), -1 * float(maxAngle), 0) )
                 else:
                     raise Exception("Evil's afoot!")
                 
@@ -200,6 +200,9 @@ class Emitter(object):
             else:
                 self.angle = comComb/i
         #print "angle: " + str(self.angle)
+    
+    def setAngle(self, angle):
+        self.angle = self.defaultAngle + math.degrees(angle)
                                             
     def commandSlaves(self):
         #print "slave commanded"

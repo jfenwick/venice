@@ -162,15 +162,6 @@ class Installation(threading.Thread):
                 return False
         else:
             return False
-        
-    def getESpacing(self):
-        return self.eSpacing
-        
-    def getRSpacing(self):
-        return self.rSpacing
-    
-    def getEmitterList(self):
-        return self.emitters
     
     def operate (self):
         while not self._stop.isSet():
@@ -188,10 +179,6 @@ class Installation(threading.Thread):
             return True
         else:
             return False
-            
-    
-    def getTarget(self, targetID):
-        return self.trackedTargets[targetID]
 
     def targetsInRange(self, eRange):
         targets = {}
@@ -202,7 +189,19 @@ class Installation(threading.Thread):
                 #print "True"
                 targets[key] = target
             #else: #print "False"
-        return targets
+        return targets            
+    
+    def getTarget(self, targetID):
+        return self.trackedTargets[targetID]
+        
+    def getESpacing(self):
+        return self.eSpacing
+        
+    def getRSpacing(self):
+        return self.rSpacing
+    
+    def getEmitterList(self):
+        return self.emitters
 
 class EmitterStatuses(object):
     
@@ -210,15 +209,18 @@ class EmitterStatuses(object):
         self.statuses = self.generateEntries(configuration)
         
     def generateEntries(self, configuration):
-        statuses = []
+        statuses = {}
+        emitterConfig = configuration.getEmitterConfig()
         i = 0
         for row in configuration.getEmitterConfig():
             j = 0
-            emitterRow = []
-            for emitter in row:
-                emitterRow.append([float(configuration.getDefaultAngle(i,j)), 0.0])
+            for eConf in row:
+                
+                statuses[ ( int(emitterConfig[i][j][3]), int(emitterConfig[i][j][4]) ) ] = [ emitterConfig[i][j][7], emitterConfig[i][j][9], emitterConfig[i][j][8], emitterConfig[i][j][10], 0, emitterConfig[i][j][5] ]
+                #dictionary layout
+                #[arrayLocation] : [ servoArduinoID, relayArduinoID, servoPin, relayPin, state, angle(DEG) ]
                 j += 1
-            statuses.append(emitterRow)
+            
             i += 1
         #print statuses
         return statuses
@@ -228,10 +230,9 @@ class EmitterStatuses(object):
     
     def updateEmitter(self, emitter):
         emArLoc = emitter.getArrLocation()
-        #print "emArLoc", emArLoc
-        emStatNew = [ emitter.getState(), emitter.getAngle()]
         #print "emStatNew", emStatNew
-        self.statuses[int(emArLoc[0])][int(emArLoc[1])] = emStatNew
+        self.statuses.get( ( int(emArLoc[0]), int(emArLoc[1]) ) )[-2] = int(emitter.getState()) + int(emitter.getBulbState())
+        self.statuses.get( (int(emArLoc[0]), int(emArLoc[1])) )[-1] = emitter.getAngle()
     
     def printStatuses(self):
         print self.statuses

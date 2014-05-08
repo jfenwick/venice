@@ -38,7 +38,6 @@ myInstallationThread = ins.Installation(myConfig)
 myTargetAcquisitionThread = tA.FakeData()
 myCommunicationThread = log.Logger()
 
-
 myInstallationThread.start()
 myCommunicationThread.start()
 myTargetAcquisitionThread.start()
@@ -49,6 +48,6 @@ myCommunicationThread.stop()
 myInstallationThread.join()
 myCommunicationThread.join()
 
-
+gR.myEStats.printStatuses()
 
 print "done"

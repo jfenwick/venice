@@ -6,6 +6,8 @@ Created on May 4, 2014
 import math
 import threading
 import GlobalResources as gR
+from copy import deepcopy
+import csv
 
 class Logger(threading.Thread):
     '''
@@ -25,52 +27,66 @@ class Logger(threading.Thread):
         while not self._stopFlag.isSet():
             if gR.emitterUpdatedFlag.isSet():
                 gR.emitterUpdatedFlag.clear()
-                #gR.lockMyEstates.acquire(1)
                 self.printArray(gR.myEStats)
-                #gR.lockMyEstates.release()
     
     def stop(self):
         self._stopFlag.set()
-        
-    def obtainEmitterList(self, emitterList):
-        self.emitterStates = self.createEmitterList(emitterList)
-    
-    def getEmitterList(self):
-        return self.emitterStates
-    
-    def createEmitterList(self, emitterList):
-        emitterStates = list()
-        for i in range(len(emitterList)):
-            emitterStates.append(list())
-            for j in range(len(emitterList[i])):
-                emitterStates[i].append( [0,0] )
-        return emitterStates
-        
-    def receiveState(self, emitter):
-        state = [ int(emitter.getState()) + int(emitter.getBulbState()), emitter.getAngle() ]
-        self.emitterStates[ int( emitter.getArrLocation()[0] ) ][ int( emitter.getArrLocation()[1] ) ] = state
-        
+          
     def printArray(self, emitterStatuses):
-        gR.printLock.acquire()
-        print "printing states:"
-        for emitterRow in emitterStatuses.getStatuses():
-            print (10*len(emitterRow)+1)*"-"
+        
+        gR.lockMyEstates.acquire(1)
+        statusDic = deepcopy(emitterStatuses.getStatuses())
+        gR.lockMyEstates.release()
+        
+        orderedList = [[]]
+        row = 0
+        column = 0
+        fails = 0
+        while 1:
+            emitterStats = statusDic.get( ( int(row), int(column) ) )
+            if emitterStats == None:
+                if fails<2:
+                    fails += 1
+                    row += 1
+                    column = 0
+                    newRow = []
+                    orderedList.append( newRow )
+                else: 
+                    orderedList.pop(-1)
+                    orderedList.pop(-1)
+                    break
+            else:
+                fails = 0
+                orderedList[row].append( [ emitterStats[-2], emitterStats[-1] ] )
+                column += 1
+        
+        """  
+        printString =  "printing states:\n"
+        for emitterRow in orderedList:
+            printString += (10*len(emitterRow)+1)*"-" + "\n"
             entry = ""
             for i in range(len(emitterRow)):
-                entry += "|" + "{0:.2f}".format(self.radToDeg(float(emitterRow[i][1]))).rjust(8, " ")+" "
+                entry += "|" + "{0:.2f}".format(float(emitterRow[i][1])).rjust(8, " ")+" "
             entry += "|\n"
             entry += (10*len(emitterRow)+1)*"-"+"\n"
             for i in range(len(emitterRow)):
                 entry += "|" + "{0:.0f}".format(emitterRow[i][0]).center(9, " ")
-            entry += "|"
-            print entry
-            print (10*len(emitterRow)+1)*"-"+"\n"
-        gR.printLock.release()
-            
-    def radToDeg(self, angle):
-        return angle * 180 / math.pi
-            
-            
-            
+            entry += "|\n"
+            printString += entry
+            printString += (10*len(emitterRow)+1)*"-"+"\n\n"
+        print printString
+        """
+        try:
+            with open('eStats.csv', 'wb') as csvfile:
+                spamwriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                for row in orderedList:
+                    nextRow = []
+                    for emitter in row:
+                        nextRow.append( emitter[1] )
+                    spamwriter.writerow(nextRow)
+        except:
+            print "file write error"
+        
+                 
         
         
