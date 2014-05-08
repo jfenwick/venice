@@ -12,3 +12,4 @@ myTargets = None
 lockMyTargets = threading.Lock()
 newTargetsFlag = threading.Event()
 emitterUpdatedFlag = threading.Event()
+printLock = threading.Lock()

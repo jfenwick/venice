@@ -4,8 +4,10 @@ Created on May 4, 2014
 @author: Matthias
 '''
 import math
+import threading
+import GlobalResources as gR
 
-class Logger(object):
+class Logger(threading.Thread):
     '''
     classdocs
     '''
@@ -15,9 +17,21 @@ class Logger(object):
         '''
         Constructor
         '''
-        self.emitterStates = None
+        super(Logger, self).__init__()
+        #self.emitterStates = None
+        self._stopFlag = threading.Event()
         
+    def run(self):
+        while not self._stopFlag.isSet():
+            if gR.emitterUpdatedFlag.isSet():
+                gR.emitterUpdatedFlag.clear()
+                #gR.lockMyEstates.acquire(1)
+                self.printArray(gR.myEStats)
+                #gR.lockMyEstates.release()
     
+    def stop(self):
+        self._stopFlag.set()
+        
     def obtainEmitterList(self, emitterList):
         self.emitterStates = self.createEmitterList(emitterList)
     
@@ -36,13 +50,14 @@ class Logger(object):
         state = [ int(emitter.getState()) + int(emitter.getBulbState()), emitter.getAngle() ]
         self.emitterStates[ int( emitter.getArrLocation()[0] ) ][ int( emitter.getArrLocation()[1] ) ] = state
         
-    def printArray(self, emitterStates):
+    def printArray(self, emitterStatuses):
+        gR.printLock.acquire()
         print "printing states:"
-        for emitterRow in emitterStates:
+        for emitterRow in emitterStatuses.getStatuses():
             print (10*len(emitterRow)+1)*"-"
             entry = ""
             for i in range(len(emitterRow)):
-                entry += "|" + "{0:.2f}".format(self.radToDeg(emitterRow[i][1])).rjust(8, " ")+" "
+                entry += "|" + "{0:.2f}".format(self.radToDeg(float(emitterRow[i][1]))).rjust(8, " ")+" "
             entry += "|\n"
             entry += (10*len(emitterRow)+1)*"-"+"\n"
             for i in range(len(emitterRow)):
@@ -50,6 +65,7 @@ class Logger(object):
             entry += "|"
             print entry
             print (10*len(emitterRow)+1)*"-"+"\n"
+        gR.printLock.release()
             
     def radToDeg(self, angle):
         return angle * 180 / math.pi

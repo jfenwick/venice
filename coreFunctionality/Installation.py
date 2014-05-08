@@ -27,7 +27,7 @@ class Installation(threading.Thread):
     '''
     initiate installation object
     '''
-    def __init__(self, configuration, targetCollector, logger):#, comModule):
+    def __init__(self, configuration):#, comModule):
         super(Installation, self).__init__()
         self.configuration = configuration
         self.eSpacing = 400
@@ -38,10 +38,8 @@ class Installation(threading.Thread):
         self.emitters = list()
         self.initiateEmitters()
         self.initiateEmittersPhase2()
-        self.targetCollector = targetCollector
         self.trackedTargets = None #{"ID1":(1000, 650, 1000)}
         self.operating = False
-        self.logger = logger
         self._stop = threading.Event()
         #self.operate()
 
@@ -53,10 +51,6 @@ class Installation(threading.Thread):
     
     def stop(self):
         self._stop.set()
-
-    def stopped(self):
-        return self._stop.isSet()
-    
     
     def initiateEmitters(self):
         for i in self.configuration.getEmitterConfig():
@@ -179,7 +173,7 @@ class Installation(threading.Thread):
         return self.emitters
     
     def operate (self):
-        while not self.stopped():
+        while not self._stop.isSet():
             if self.obtainTargets():
                 self.updateEmitters()
                 gR.emitterUpdatedFlag.set()
@@ -222,16 +216,22 @@ class EmitterStatuses(object):
             j = 0
             emitterRow = []
             for emitter in row:
-                emitterRow.append([configuration.getDefaultAngle(i,j), 0])
+                emitterRow.append([float(configuration.getDefaultAngle(i,j)), 0.0])
                 j += 1
             statuses.append(emitterRow)
             i += 1
+        #print statuses
         return statuses
+    
+    def getStatuses(self):
+        return self.statuses
     
     def updateEmitter(self, emitter):
         emArLoc = emitter.getArrLocation()
-        emStatNew = [ emitter.getState(), emitter.getAngle]
-        self.statuses[emArLoc[0]][emArLoc[1]] = 
+        #print "emArLoc", emArLoc
+        emStatNew = [ emitter.getState(), emitter.getAngle()]
+        #print "emStatNew", emStatNew
+        self.statuses[int(emArLoc[0])][int(emArLoc[1])] = emStatNew
     
     def printStatuses(self):
         print self.statuses

@@ -26,15 +26,29 @@ print "done"
 import Configuration as con
 import Installation as ins
 import GlobalResources as gR
-import Logger
+import Logger as log
+import TargetAcquisition as tA
+import time
 
 myConfig = con.Configuration("../config.csv")
     
 gR.myEStats = ins.EmitterStatuses(myConfig)
 
-myInstallationThread
-myTargetAcquisitionThread
-myCommunicationThread
+myInstallationThread = ins.Installation(myConfig)
+myTargetAcquisitionThread = tA.FakeData()
+myCommunicationThread = log.Logger()
+
+
+myInstallationThread.start()
+myCommunicationThread.start()
+myTargetAcquisitionThread.start()
+
+myTargetAcquisitionThread.join()
+myInstallationThread.stop()
+myCommunicationThread.stop()
+myInstallationThread.join()
+myCommunicationThread.join()
 
 
 
+print "done"
