@@ -6,8 +6,8 @@ Control n servos on n arduinos over serial
 import glob
 import platform
 import serial
-import time
 import sys
+import time
 
 '''
 Servo
@@ -95,6 +95,7 @@ class EmitterDriver:
 
 	# update the model with emitter information and update if enough time has passed
 	def updateEmitter(self, servoArduinoNumber, bulbArduinoNumber, emitterServoPin, emitterBulbPin, emitterState, emitterAngle):
+		emitterAngle = 90 + emitterAngle
 		# constrain the servo angle
 		if emitterAngle > 135:
 			emitterAngle = 135
@@ -129,11 +130,13 @@ class EmitterDriver:
 				# append null byte to character arrays going to arduinos to signal end of update
 				for servo_datum in servo_data:
 					servo_datum = servo_datum + "\0"
+			print servo_data
 			# send data to the Arduinos
 			#print servo_data
 			for port,servo_datum in zip(self.ports,servo_data):
 				port.device.write(servo_datum)
 			self.last_update_time = time.clock()
+			time.sleep(1)
 
 
 
@@ -146,9 +149,9 @@ class EmitterDriver:
 def servo_iter():
 	l = []
 	for i in range(0,100):
-		l.append(40)
+		l.append(-45)
 	for i in range(0,100):
-		l.append(80)
+		l.append(45)
 	for pos in l:
 		yield pos
 
