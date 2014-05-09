@@ -32,7 +32,7 @@ import time
 import cascade
 
 paths = []
-paths.append('/dev/tty.usbmodem14141')
+paths.append('/dev/tty.usbmodem1411')
 
 myConfig = con.Configuration("config.csv")
 

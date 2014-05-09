@@ -42,10 +42,10 @@ class ArduinoDriver(threading.Thread):
 
 		self.unwrapEmitters(emitters.getStatuses())
 		self.open_ports()
-	
+        self._stopFlag = threading.Event()
 
 	def run(self):
-		while 1:
+        while not self._stopFlag.isSet():
 			if gR.emitterUpdatedFlag.isSet():
 				gR.emitterUpdatedFlag.clear()
 				self.unwrapEmitters(gR.myEStats.getStatuses())
@@ -54,6 +54,7 @@ class ArduinoDriver(threading.Thread):
 
 	def stop(self):
 		self.close_ports()
+        self._stopFlag.set()
 
 	def unwrapEmitters(self, wrapped_emitters):
 		emitters = []
@@ -109,22 +110,24 @@ class ArduinoDriver(threading.Thread):
 
 		if len(found_ports) == 0:
 			print "No Arduinos found"
-			sys.exit(1)
+			#sys.exit(1)
 
 		if len(self.devices) != len(found_ports):
 			print "Number of found Arduinos does not match configured number"
-			sys.exit(1)
+			#sys.exit(1)
 
+		print 'found ports:'
 		for found_port in found_ports:
+			print found_port
 			try:
 				for device in self.devices:
 					if device.path == found_port:
 						# connect to serial port
+						print 'assigning port'
 						device.port = serial.Serial(found_port, 9600)
 						break
 			except:
 				print 'Failed to open port'
-				sys.exit(1)
 		# need a short delay right after serial port is started for the Arduino to initialize
 		#time.sleep(1)
 
