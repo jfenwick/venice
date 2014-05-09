@@ -84,7 +84,7 @@ class ArduinoDriver(threading.Thread):
 	def updateArduinos(self):
 		# if enough time has elapsed since the last update, update arduinos
 		elapsed = (time.clock() - self.last_update_time)
-		if elapsed > 1:
+		if elapsed > 2:
 			print 'data_store:'
 			print self.data_store
 			print 'devices:'
