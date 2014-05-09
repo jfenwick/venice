@@ -29,14 +29,19 @@ import GlobalResources as gR
 import Logger as log
 import TargetAcquisition as tA
 import time
+import cascade
 
-myConfig = con.Configuration("../config.csv")
+paths = []
+paths.append('/dev/tty.usbmodem14141')
+
+myConfig = con.Configuration("config.csv")
     
 gR.myEStats = ins.EmitterStatuses(myConfig)
 
 myInstallationThread = ins.Installation(myConfig)
 myTargetAcquisitionThread = tA.FakeData()
-myCommunicationThread = log.Logger()
+myCommunicationThread = cascade.ArduinoDriver(gR.myEStats, paths)
+print 'started communication thread'
 
 myInstallationThread.start()
 myCommunicationThread.start()

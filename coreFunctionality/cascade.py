@@ -40,10 +40,20 @@ class ArduinoDriver(threading.Thread):
 		for path in paths:
 			self.data_store.append({})
 
-		self.updateEmitters(emitters)
+		self.unwrapEmitters(emitters.getStatuses())
+		self.open_ports()
+	
 
 	def run(self):
-		self.unwrapEmitters(gR.myEStats)
+		while 1:
+			if gR.emitterUpdatedFlag.isSet():
+				gR.emitterUpdatedFlag.clear()
+				self.unwrapEmitters(gR.myEStats.getStatuses())
+				#time.sleep(1)
+				self.updateArduinos()
+
+	def stop(self):
+		self.close_ports()
 
 	def unwrapEmitters(self, wrapped_emitters):
 		emitters = []
@@ -74,7 +84,11 @@ class ArduinoDriver(threading.Thread):
 	def updateArduinos(self):
 		# if enough time has elapsed since the last update, update arduinos
 		elapsed = (time.clock() - self.last_update_time)
-		if elapsed > 0.05:
+		if elapsed > 1:
+			print 'data_store:'
+			print self.data_store
+			print 'devices:'
+			print self.devices
 			for device,datum in zip(self.devices,self.data_store):
 				serial_data = ''
 				sorted_data = sorted(datum.iteritems(), key=operator.itemgetter(0))
@@ -82,10 +96,10 @@ class ArduinoDriver(threading.Thread):
 					serial_data = serial_data + str(data[1]).zfill(3)
 				serial_data = serial_data + "\0"
 				device.port.write(serial_data)
-
+				print serial_data
 
 			self.last_update_time = time.clock()
-			time.sleep(3)
+			#time.sleep(3)
 
 	# looks for all devices that have the same name pattern as an Arduino and opens them
 	def open_ports(self):
@@ -112,7 +126,7 @@ class ArduinoDriver(threading.Thread):
 				print 'Failed to open port'
 				sys.exit(1)
 		# need a short delay right after serial port is started for the Arduino to initialize
-		time.sleep(1)
+		#time.sleep(1)
 
 	def close_ports(self):
 		print 'closing ports'
@@ -120,13 +134,13 @@ class ArduinoDriver(threading.Thread):
 			device.port.close()
 
 if __name__ == "__main__":
+	pass
+	'''
 	paths = []
 	paths.append('/dev/tty.usbmodem14141')
 
 	num_emitters = 3
 	emitters = []
-
-	matdan = True
 
 	for i in range(0, num_emitters):
 		emitters.append([0, 1, i+2, i+2, 0, 45])
@@ -162,5 +176,8 @@ if __name__ == "__main__":
 		#	else:
 		#		driver.updateEmitters(emitters)
 		#	driver.updateArduinos()
+	except:
+		print "Unexpected error:", sys.exc_info()[0]
 	finally:
 		driverThread.close_ports()
+	'''

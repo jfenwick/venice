@@ -34,7 +34,7 @@ class Installation(threading.Thread):
         self.rSpacing = 1500
         self.masters = []
         self.slaves = []
-        self.comModule = comModule
+        #self.comModule = comModule
         self.emitters = list()
         self.initiateEmitters()
         self.initiateEmittersPhase2()
@@ -43,8 +43,8 @@ class Installation(threading.Thread):
         self._stop = threading.Event()
         #self.operate()
 
-    def getComModule(self):
-        return self.comModule
+    #def getComModule(self):
+    #    return self.comModule
     
     def run(self):
         self.operate()
