@@ -3,6 +3,9 @@ import operator
 import serial
 import sys
 import time
+import threading
+import GlobalResources as gR
+from copy import deepcopy
 
 '''
 Device
@@ -15,8 +18,9 @@ class Device:
 		self.id_num = id_num
 		self.path = path
 
-class ArduinoDriver:
+class ArduinoDriver(threading.Thread):
 	def __init__(self, emitters, paths):
+		super(ArduinoDriver, self).__init__()
 		# indexes to device paths
 		self.devices = []
 		self.last_update_time = time.clock()
@@ -37,6 +41,9 @@ class ArduinoDriver:
 			self.data_store.append({})
 
 		self.updateEmitters(emitters)
+
+	def run(self):
+		self.unwrapEmitters(gR.myEStats)
 
 	def unwrapEmitters(self, wrapped_emitters):
 		emitters = []
@@ -124,10 +131,11 @@ if __name__ == "__main__":
 	for i in range(0, num_emitters):
 		emitters.append([0, 1, i+2, i+2, 0, 45])
 
-	driver = ArduinoDriver(emitters, paths)
+	print 'getting thread'
+	driverThread = ArduinoDriver(emitters, paths)
+	print 'got thread'
 	try:
-		driver.open_ports()
-
+		print 'in the try'
 		if matdan:
 			emitters = {(1, 3): ['0', '1', '2', '2', 1, 45], (2, 8): ['0', '1', '3', '3', 0, -45], (3, 8): ['0', '1', '4', '4', 0, -45]}
 		else:
@@ -136,15 +144,23 @@ if __name__ == "__main__":
 					emitters.append([0, 1, i+2, i+2, 0, 45])
 				else:
 					emitters.append([0, 1, i+2, i+2, 0, -45])
+		print 'assigning emitters'
+		gr.myEStats = emitters
+		print 'assigned emitters'
+
+		print 'opening ports'
+		driverThread.open_ports()
+		sleep(10)
+		driverThread.run()
 			
 		time.sleep(2)
 		print 'entering loop'
 
-		while True:
-			if matdan:
-				driver.unwrapEmitters(emitters)
-			else:
-				driver.updateEmitters(emitters)
-			driver.updateArduinos()
+		#while True:
+		#	if matdan:
+		#		driver.unwrapEmitters(emitters)
+		#	else:
+		#		driver.updateEmitters(emitters)
+		#	driver.updateArduinos()
 	finally:
-		driver.close_ports()
+		driverThread.close_ports()
