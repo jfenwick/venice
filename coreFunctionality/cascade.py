@@ -42,10 +42,10 @@ class ArduinoDriver(threading.Thread):
 
 		self.unwrapEmitters(emitters.getStatuses())
 		self.open_ports()
-        self._stopFlag = threading.Event()
+		self._stopFlag = threading.Event()
 
 	def run(self):
-        while not self._stopFlag.isSet():
+		while not self._stopFlag.isSet():
 			if gR.emitterUpdatedFlag.isSet():
 				gR.emitterUpdatedFlag.clear()
 				self.unwrapEmitters(gR.myEStats.getStatuses())
@@ -54,7 +54,7 @@ class ArduinoDriver(threading.Thread):
 
 	def stop(self):
 		self.close_ports()
-        self._stopFlag.set()
+		self._stopFlag.set()
 
 	def unwrapEmitters(self, wrapped_emitters):
 		emitters = []
@@ -85,7 +85,7 @@ class ArduinoDriver(threading.Thread):
 	def updateArduinos(self):
 		# if enough time has elapsed since the last update, update arduinos
 		elapsed = (time.clock() - self.last_update_time)
-		if elapsed > 2:
+		if elapsed > 0.01:
 			print 'data_store:'
 			print self.data_store
 			print 'devices:'
