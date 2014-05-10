@@ -71,7 +71,7 @@ class ArduinoDriver(threading.Thread):
 		angleIndex = 5
 
 		# fill the data_store with emitters
-		for i,e in enumerate(emitters):
+		for e in emitters:
 			angle = int(e[angleIndex])
 			angle = 90 + angle
 			# constrain the servo angle, just in case
@@ -79,8 +79,16 @@ class ArduinoDriver(threading.Thread):
 				angle = 135
 			elif angle < 45:
 				angle = 45
-			tmp = self.data_store[int(e[servoArduinoIndex])]
-			tmp[int(e[servoPinIndex])] = angle
+			# store the servo and bulb data in our complex data array
+			servoArduinoId = int(e[servoArduinoIndex])
+			servoPin = int(e[servoPinIndex])
+			tmp = self.data_store[servoArduinoId]
+			tmp[servoPin] = angle
+
+			#bulbArduinoId = int(e[bulbArduinoIndex])
+			#bulbPin = int(e[bulbPinIndex])
+			#tmp = self.data_store[bulbArduinoId]
+			#tmp[bulbPin] = int(stateIndex)
 
 	def updateArduinos(self):
 		# if enough time has elapsed since the last update, update arduinos
@@ -90,22 +98,29 @@ class ArduinoDriver(threading.Thread):
 			print self.data_store
 			print 'devices:'
 			print self.devices
+			# iterate over arduinos to send data to
 			for device,datum in zip(self.devices,self.data_store):
 				serial_data = ''
 				sorted_data = sorted(datum.iteritems(), key=operator.itemgetter(0))
+				# the string of data sent over serial
+				# states and angles are padded to 3 spaces
 				for data in sorted_data:
 					serial_data = serial_data + str(data[1]).zfill(3)
 				serial_data = serial_data + "\0"
+				# send the data to an arduino
 				device.port.write(serial_data)
 				print serial_data
 
+			# update the clock if you need a delay
 			self.last_update_time = time.clock()
 
-	# looks for all devices that have the same name pattern as an Arduino and opens them
+	# opens all the arduinos as configured in __init__.py
 	def open_ports(self):
+		print 'opening ports'
 		for device in self.devices:
 			device.port = serial.Serial(device.path, 9600)
 
+	# close all the arduinos
 	def close_ports(self):
 		print 'closing ports'
 		for device in self.devices:
