@@ -24,6 +24,7 @@ class ArduinoDriver(threading.Thread):
 		# indexes to device paths
 		self.devices = []
 		self.last_update_time = time.clock()
+		self.arduino_delay = 0.0
 
 		for i,path in enumerate(paths):
 			self.devices.append(Device(i, path))
@@ -49,7 +50,6 @@ class ArduinoDriver(threading.Thread):
 			if gR.emitterUpdatedFlag.isSet():
 				gR.emitterUpdatedFlag.clear()
 				self.unwrapEmitters(gR.myEStats.getStatuses())
-				#time.sleep(1)
 				self.updateArduinos()
 
 	def stop(self):
@@ -71,7 +71,7 @@ class ArduinoDriver(threading.Thread):
 		angleIndex = 5
 
 		# fill the data_store with emitters
-		for e in emitters:
+		for i,e in enumerate(emitters):
 			angle = int(e[angleIndex])
 			angle = 90 + angle
 			# constrain the servo angle, just in case
@@ -85,7 +85,7 @@ class ArduinoDriver(threading.Thread):
 	def updateArduinos(self):
 		# if enough time has elapsed since the last update, update arduinos
 		elapsed = (time.clock() - self.last_update_time)
-		if elapsed > 0.01:
+		if elapsed > self.arduino_delay:
 			print 'data_store:'
 			print self.data_store
 			print 'devices:'
@@ -100,87 +100,13 @@ class ArduinoDriver(threading.Thread):
 				print serial_data
 
 			self.last_update_time = time.clock()
-			#time.sleep(3)
 
 	# looks for all devices that have the same name pattern as an Arduino and opens them
 	def open_ports(self):
-		# find arduinos
-		# note: currently this is Mac only
-		found_ports = glob.glob('/dev/tty.usbmodem*')
-
-		if len(found_ports) == 0:
-			print "No Arduinos found"
-			#sys.exit(1)
-
-		if len(self.devices) != len(found_ports):
-			print "Number of found Arduinos does not match configured number"
-			#sys.exit(1)
-
-		print 'found ports:'
-		for found_port in found_ports:
-			print found_port
-			try:
-				for device in self.devices:
-					if device.path == found_port:
-						# connect to serial port
-						print 'assigning port'
-						device.port = serial.Serial(found_port, 9600)
-						break
-			except:
-				print 'Failed to open port'
-		# need a short delay right after serial port is started for the Arduino to initialize
-		#time.sleep(1)
+		for device in self.devices:
+			device.port = serial.Serial(device.path, 9600)
 
 	def close_ports(self):
 		print 'closing ports'
 		for device in self.devices:
 			device.port.close()
-
-if __name__ == "__main__":
-	pass
-	'''
-	paths = []
-	paths.append('/dev/tty.usbmodem14141')
-
-	num_emitters = 3
-	emitters = []
-
-	for i in range(0, num_emitters):
-		emitters.append([0, 1, i+2, i+2, 0, 45])
-
-	print 'getting thread'
-	driverThread = ArduinoDriver(emitters, paths)
-	print 'got thread'
-	try:
-		print 'in the try'
-		if matdan:
-			emitters = {(1, 3): ['0', '1', '2', '2', 1, 45], (2, 8): ['0', '1', '3', '3', 0, -45], (3, 8): ['0', '1', '4', '4', 0, -45]}
-		else:
-			for i in range(0, num_emitters):
-				if i % 2 == 0:
-					emitters.append([0, 1, i+2, i+2, 0, 45])
-				else:
-					emitters.append([0, 1, i+2, i+2, 0, -45])
-		print 'assigning emitters'
-		gr.myEStats = emitters
-		print 'assigned emitters'
-
-		print 'opening ports'
-		driverThread.open_ports()
-		sleep(10)
-		driverThread.run()
-			
-		time.sleep(2)
-		print 'entering loop'
-
-		#while True:
-		#	if matdan:
-		#		driver.unwrapEmitters(emitters)
-		#	else:
-		#		driver.updateEmitters(emitters)
-		#	driver.updateArduinos()
-	except:
-		print "Unexpected error:", sys.exc_info()[0]
-	finally:
-		driverThread.close_ports()
-	'''
