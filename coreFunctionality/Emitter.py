@@ -10,7 +10,7 @@ import GlobalResources as gR
 
 class Emitter(object):
     
-    def __init__(self, installation, phyLocation, arrLocation, defaultAngle, maxTilt, servoArduinoID, servoPin, relayArduinoID, relayPin ):
+    def __init__(self, installation, phyLocation, arrLocation, defaultAngle, maxTilt, servoArduinoID, servoPin, relayArduinoID, relayPin, rotationMod ):
         self.phyLocation = phyLocation          #coorinates of physical location
         #print "initiating emitter at: " + str(self.phyLocation)
         self.arrLocation = arrLocation          #coordinates in emitterArray
@@ -21,7 +21,8 @@ class Emitter(object):
         self.servoArduinoID = servoArduinoID
         self.relayPin = relayPin
         self.servoPin = servoPin
-        self.state = 0                           #TRUE for master, FALSE for slave
+        self.state = 0             
+        self.rotationMod = rotationMod              #TRUE for master, FALSE for slave
         #self.range = self.determineRange()       #list of (xMin, xMax, yMin, yMax)
         self.target = None                      #key of tracked target in installation's target dictionary
         self.influence = 2
@@ -31,17 +32,27 @@ class Emitter(object):
         self.secondaryTarget = None
         self.rangeExtension = self.installation.getRSpacing()
         
-    """
-    checks for targets in range
-    sets state
-    communicates state to installation
-    """
     def determineStatus(self):
+        """
+        checks for targets in range
+        sets state
+        communicates state to installation
+        """
         #print "determining status of emiiter " + str(self.arrLocation)
         #retrieve targets in emitter-range from installation as dictionary
         trackedTargetsInRange = self.installation.targetsInRange(self.range)
+#        try:
+#            if trackedTargetsInRange.values()[0][0] > self.range[1]:
+#                print 'problem'
+#        except:
+#            pass
+#        else:
+#            print 'tried'
+            
         #print "targets in Range: " + str(trackedTargetsInRange)
         #print "emitter-range: " +str(self.range)
+        
+
         
         if trackedTargetsInRange:
             #emitter has targets in range
@@ -57,11 +68,13 @@ class Emitter(object):
                 self.beMaster()
                 
         else:
+            self.target = None
             extRange = [ self.range[0] - self.rangeExtension, self.range[1] + self.rangeExtension, self.range[2], self.range[3]  ]
+            
             #print "Range = " + str(self.range)
             #print "extRange = " + str(extRange)
             trackedTargetsInExtRange = self.installation.targetsInRange(extRange)
-            
+
             if trackedTargetsInExtRange:
                 #print "target in ext range"
                 self.secondaryTarget = self.determineClosestTarget(trackedTargetsInExtRange)
@@ -73,13 +86,24 @@ class Emitter(object):
         #print "emitter is " + str(self.state)
         self.communicateState()
     
+    def changeDefAngle(self, angle):
+        '''
+        changes emitter's self.defaultAngle by angle
+        '''
+        self.defaultAngle += angle
+        print "command reached changeDefAngle in emitter ", self.arrLocation, "\nnew defaultAngle = ", self.defaultAngle
+        self.updateAngle(self.state)
+        self.communicateAngle()
+        print "angle after defAng change ",self.angle
+        gR.emitterUpdatedFlag.set()
+    
     def targetXDistance(self, targetID):
         return float(self.installation.getTarget(targetID)[0]) - float(self.phyLocation[0])
     
-    """
-    determine which slaves are influenced by master-emitter
-    """
     def getSlaves(self):
+        """
+        determine which slaves are influenced by master-emitter
+        """
         #print "looking for slaves"
         self.slaves = list()
         x=int(self.arrLocation[0])
@@ -114,11 +138,11 @@ class Emitter(object):
             else:
                 break       
 
-    """
-    targetList is a dictionary of targets k = targetID v = point
-    returns ID/key of closest Point
-    """
     def determineClosestTarget(self, targetList):
+        """
+        targetList is a dictionary of targets k = targetID v = point
+        returns ID/key of closest Point
+        """
         distances = {}
         for key in targetList.keys():
             distances[key] = vm.getPointDistance(self.phyLocation, targetList[key])
@@ -160,6 +184,9 @@ class Emitter(object):
             maxY = maxYLoc[1]
         
         self.range = (int(minX), int(maxX), int(minY), int(maxY))
+        #print "pL: ", self.phyLocation
+        #print "r: ", self.range
+        
         #print "self.arrLocation = " + str(self.arrLocation)
         #print "self.range = " + str(self.range)
         
@@ -172,19 +199,25 @@ class Emitter(object):
                 self.setAngle(self.angleToTarget(self.installation.getTarget(self.target)))
             elif self.secondaryTarget:
                 distance = self.targetXDistance(self.secondaryTarget)
+                #if self.arrLocation[0] == '0' and self.arrLocation[1] == '4':
+                #print distance
                 #print "distance " + str(distance)
-                maxAngle = abs(self.angleToTarget( [ float(self.range[1])-float(self.phyLocation[0]),0, 1000 ] ))
+                #maxAngle = abs(self.angleToTarget( [ float(self.range[1])-float(self.phyLocation[0]),0, 1200 ] ))
+                maxAngle = abs(self.angleToTarget( [ float(self.range[1]),0, 1200 ] ))
                 #print "maxAngle = " + str(vm.radToDeg(maxAngle))
                 if distance > 0:
                     relevantRange = self.range[1]
-                    outOfRange = distance - relevantRange
-                    self.setAngle(vm.mapToDomain(outOfRange, 0, abs(relevantRange), maxAngle, 0))
+                    outOfRange = distance - (int(relevantRange) - int(self.phyLocation[0]))
+                    #print outOfRange
+                    #print vm.mapToDomain(outOfRange, 0, float(abs(relevantRange-float(self.phyLocation[0]))), maxAngle, 0)
+                    self.setAngle(vm.mapToDomain(outOfRange, 0, float(abs(relevantRange-float(self.phyLocation[0]))), maxAngle, 0))
                 elif distance < 0:
                     relevantRange = self.range[0]
-                    outOfRange = distance + relevantRange
+                    outOfRange = int(self.phyLocation[0]) - int(relevantRange) + distance
                     #print "oor " + str(outOfRange)
-                    
-                    self.setAngle( vm.mapToDomain(outOfRange, 0, -1 * float(abs(relevantRange)), -1 * float(maxAngle), 0) )
+                    #print "reR ", relevantRange
+                    #print self.phyLocation
+                    self.setAngle( vm.mapToDomain(outOfRange, 0, -1 * float(abs(relevantRange-float(self.phyLocation[0]))), -1 * float(maxAngle), 0) )
                 else:
                     raise Exception("Evil's afoot!")
                 
@@ -196,14 +229,14 @@ class Emitter(object):
                 comComb += command
                 i += 1
             if i == 0:
-                self.angle = 0
+                self.setAngle(0)
             else:
-                self.angle = comComb/i
-        #print "angle: " + str(self.angle)
-    
+                self.setAngle(comComb/i)
+        
     def setAngle(self, angle):
-        self.angle = self.defaultAngle + math.degrees(angle)
-                                            
+        self.angle = int(float(self.defaultAngle)*float(self.rotationMod) + math.degrees(angle))
+        print "angle being set to: ", self.angle, " for emitter ", self.arrLocation
+        
     def commandSlaves(self):
         #print "slave commanded"
         if self.state:
@@ -275,3 +308,12 @@ class Emitter(object):
     
     def getAngle(self):
         return self.angle
+    
+    def getDefaultAngle(self):
+        '''
+        returns emitter's default angle
+        '''
+        return self.defaultAngle
+    
+    def getArrLoc(self):
+        return self.arrLocation

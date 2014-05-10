@@ -22,22 +22,49 @@ class Logger(threading.Thread):
         super(Logger, self).__init__()
         #self.emitterStates = None
         self._stopFlag = threading.Event()
+        gR.emitterUpdatedFlag.set()
         
     def run(self):
         while not self._stopFlag.isSet():
             if gR.emitterUpdatedFlag.isSet():
                 gR.emitterUpdatedFlag.clear()
-                self.printArray(gR.myEStats)
+                oList = self.createOrederedList(gR.myEStats)
+                self.printArray(oList)
+                self.writeEmitterFile(oList)
+                self.writeTargetFile()
     
     def stop(self):
         self._stopFlag.set()
-          
-    def printArray(self, emitterStatuses):
-        
+    
+    def writeTargetFile(self):
+        gR.lockMyTargets.acquire()
+        targets = deepcopy(gR.myTargets)
+        gR.lockMyTargets.release()
+        #print targets.values()
+        try:
+            with open('targets.csv', 'wb') as csvfile:
+                spamwriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                for row in targets.values():
+                    spamwriter.writerow(row)
+        except:
+            print "file write error, targets"
+            
+    def writeEmitterFile(self, orderedList):
+        try:
+            with open('eStats.csv', 'wb') as csvfile:
+                spamwriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                for row in orderedList:
+                    nextRow = []
+                    for emitter in row:
+                        nextRow.append( emitter[1] )
+                    spamwriter.writerow(nextRow)
+        except:
+            print "file write error"
+            
+    def createOrederedList(self, emitterStatuses):
         gR.lockMyEstates.acquire(1)
         statusDic = deepcopy(emitterStatuses.getStatuses())
         gR.lockMyEstates.release()
-        
         orderedList = [[]]
         row = 0
         column = 0
@@ -59,8 +86,11 @@ class Logger(threading.Thread):
                 fails = 0
                 orderedList[row].append( [ emitterStats[-2], emitterStats[-1] ] )
                 column += 1
-        
-        """  
+                
+        return orderedList
+    
+    def printArray(self, orderedList):
+                
         printString =  "printing states:\n"
         for emitterRow in orderedList:
             printString += (10*len(emitterRow)+1)*"-" + "\n"
@@ -75,7 +105,11 @@ class Logger(threading.Thread):
             printString += entry
             printString += (10*len(emitterRow)+1)*"-"+"\n\n"
         print printString
-        """
+
+        
+        
+        
+        
         try:
             with open('eStats.csv', 'wb') as csvfile:
                 spamwriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -86,7 +120,3 @@ class Logger(threading.Thread):
                     spamwriter.writerow(nextRow)
         except:
             print "file write error"
-        
-                 
-        
-        

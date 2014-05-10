@@ -37,11 +37,11 @@ class FakeData(threading.Thread):
         """
         
         #fakeData2
-        for i in range(50):
+        for i in range(1):
             gR.lockMyTargets.acquire(1)
-            gR.myTargets = {1:[100+i*100,1500,1200]}
+            gR.myTargets = {}#1:[-1500+i*10,1000,1200], 2:[900,0+i*10,1200], 3:[3600-i*5,3000-i*4,1200] }
             gR.lockMyTargets.release()
             gR.newTargetsFlag.set()
             
-            time.sleep(0.2)
+            time.sleep(0.01)
             

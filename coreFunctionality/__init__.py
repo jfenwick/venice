@@ -20,7 +20,7 @@ print "stop issued"
 myInstallationThread.join()
 print "done"
 """
-
+"""
 #Version 2
 
 import Configuration as con
@@ -57,6 +57,45 @@ myCommunicationThread.stop()
 myInstallationThread.join()
 myCommunicationThread.join()
 
-gR.myEStats.printStatuses()
+#gR.myEStats.printStatuses()
 
 print "done"
+"""
+
+
+#Version 3
+
+import Configuration as con
+import Installation as ins
+import GlobalResources as gR
+import Logger as log
+import TargetAcquisition as tA
+import time
+import commandClasses as cC
+
+if __name__ == '__main__':
+    myConfig = con.Configuration("config.csv")
+        
+    gR.myEStats = ins.EmitterStatuses(myConfig)
+    
+    
+    
+    myInstallationThread = ins.Installation(myConfig)
+    myCommunicationThread = log.Logger()
+    
+    
+    myTargetAcquisitionThread = tA.FakeData()
+    
+    myInstallationThread.start()
+    myCommunicationThread.start()
+
+    cC.ManualControl().cmdloop()
+    
+    myTargetAcquisitionThread.start()
+    myTargetAcquisitionThread.join()
+    myInstallationThread.stop()
+    myCommunicationThread.stop()
+    myInstallationThread.join()
+    myCommunicationThread.join()
+    
+    print "done"

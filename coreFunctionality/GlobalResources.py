@@ -12,3 +12,11 @@ myTargets = None
 lockMyTargets = threading.Lock()
 newTargetsFlag = threading.Event()
 emitterUpdatedFlag = threading.Event()
+
+directCommand = {}
+lockDirectCommand = threading.Lock()
+newCommandFlag = threading.Event()
+
+saveConfigFlag = threading.Event()
+saveConfigFilename = 'config.csv'
+lockSaveConfigFilename = threading.Lock()

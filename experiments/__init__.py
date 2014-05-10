@@ -81,7 +81,7 @@ import cmd
 class InstallationControll(cmd.Cmd):
    
     
-    def do_greet(self, person):
+    def do_w(self, person):
         Greet the named person
         if person:
             print "hi,", person
@@ -97,9 +97,9 @@ class InstallationControll(cmd.Cmd):
 if __name__ == '__main__':
     InstallationControll().cmdloop()
     print "done"
-
-
 """
+
+
 
 """
 #shared resources experiment
@@ -138,7 +138,8 @@ printThread.join()
 dataGenThread.join()
 print "done"
 """
-
+"""
+#csv-write Experiment
 import csv
 with open('eggs.csv', 'wb') as csvfile:
     spamwriter = csv.writer(csvfile, delimiter=',',
@@ -146,7 +147,7 @@ with open('eggs.csv', 'wb') as csvfile:
     spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
     spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 
-
+"""
 """
 #MAIN
 from coreFunctionality import Configuration

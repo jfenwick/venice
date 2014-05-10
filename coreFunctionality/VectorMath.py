@@ -75,6 +75,7 @@ def angleBetween2D(v1,v2):
     return angle
     
 def mapToDomain (value, min1, max1, min2, max2 ):
+    #print value, min1, max1, min2, max2
     return  ( ( float(value) - float(min1) ) / ( float(max1) - float(min1) ) )*( float(max2) - float(min2) ) + float(min2)
             
 def radToDeg(angle):
