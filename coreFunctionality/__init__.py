@@ -72,16 +72,20 @@ import Logger as log
 import TargetAcquisition as tA
 import time
 import commandClasses as cC
+import cascade
 
 if __name__ == '__main__':
-    myConfig = con.Configuration("config.csv")
+    paths = []
+    # mac path tends to look like this:
+    paths.append('/dev/tty.usbmodem1411')
+    # windows path tends to look like this:
+    # paths.append(10)
+    myConfig = con.Configuration("tiny.csv")
         
     gR.myEStats = ins.EmitterStatuses(myConfig)
     
-    
-    
     myInstallationThread = ins.Installation(myConfig)
-    myCommunicationThread = log.Logger()
+    myCommunicationThread = cascade.ArduinoDriver(gR.myEStats, paths)
     
     
     myTargetAcquisitionThread = tA.FakeData()
