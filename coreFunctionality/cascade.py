@@ -72,7 +72,8 @@ class ArduinoDriver(threading.Thread):
 
 		# fill the data_store with emitters
 		for e in emitters:
-			angle = int(e[angleIndex])
+			print type(e[angleIndex])
+			angle = int(float(e[angleIndex]))
 			angle = 90 + angle
 			# constrain the servo angle, just in case
 			if angle > 135:
@@ -80,15 +81,15 @@ class ArduinoDriver(threading.Thread):
 			elif angle < 45:
 				angle = 45
 			# store the servo and bulb data in our complex data array
-			servoArduinoId = int(e[servoArduinoIndex])
-			servoPin = int(e[servoPinIndex])
+			servoArduinoId = int(float(e[servoArduinoIndex]))
+			servoPin = int(float(e[servoPinIndex]))
 			tmp = self.data_store[servoArduinoId]
 			tmp[servoPin] = angle
 
-			#bulbArduinoId = int(e[bulbArduinoIndex])
-			#bulbPin = int(e[bulbPinIndex])
+			#bulbArduinoId = int(float(e[bulbArduinoIndex]))
+			#bulbPin = int(float(e[bulbPinIndex]))
 			#tmp = self.data_store[bulbArduinoId]
-			#tmp[bulbPin] = int(stateIndex)
+			#tmp[bulbPin] = int(float(stateIndex))
 
 	def updateArduinos(self):
 		# if enough time has elapsed since the last update, update arduinos

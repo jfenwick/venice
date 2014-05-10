@@ -80,7 +80,7 @@ if __name__ == '__main__':
     paths.append('/dev/tty.usbmodem1411')
     # windows path tends to look like this:
     # paths.append(10)
-    myConfig = con.Configuration("tiny.csv")
+    myConfig = con.Configuration("config.csv")
         
     gR.myEStats = ins.EmitterStatuses(myConfig)
     
