@@ -90,6 +90,7 @@ if __name__ == '__main__':
     
     myTargetAcquisitionThread = tA.FakeData()
     #myTargetAcquisitionThread = tA.SensorData()
+    #myTargetAcquisitionThread = tA.DataTest()
 
     myInstallationThread.start()
     myCommunicationThread.start()

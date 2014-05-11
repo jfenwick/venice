@@ -11,7 +11,6 @@ import sys  #for exit
 
 class FakeData(threading.Thread):
     def __init__(self):
-
         super(FakeData, self).__init__()
         
     def run(self):
@@ -66,5 +65,41 @@ class SensorData(threading.Thread):
     def stop(self):
         self._stop.set()
 
-    def update_targets(targets):
+    def update_targets(self, targets):
         reply = s.recv(19)
+        x = reply.split(',')
+        out = {}
+        out[int(x[0])] = [int(float(x[1])), int(float(x[2]))]
+        gR.myTargets = out
+
+
+class DataTest(threading.Thread):
+    def __init__(self):
+        super(DataTest, self).__init__()
+        self._stopFlag = threading.Event()
+        self.data = self.parse_data('coordinates.txt')
+
+    def run(self):
+        while not self._stopFlag.isSet():
+            gR.lockMyTargets.acquire(1)
+            try:
+                gR.newTargetsFlag.set()
+                self.update_targets(gR.myTargets)
+            finally:
+                gR.lockMyTargets.release()
+
+    def stop(self):
+        self._stop.set()
+
+    def parse_data(self, coord_file):
+        with open(coord_file, 'r') as f:
+            content = f.readlines()
+        return f
+
+    def update_targets(self, targets):
+        if len(self.data) > 0:
+            datum = self.data[0]
+            out = {}
+            out[0] = [int(float(datum[0])), int(float(datum[1]))]
+            del self.data[0]
+        gR.myTargets = out
