@@ -37,7 +37,7 @@ class FakeData(threading.Thread):
         #fakeData2
         for i in range(1):
             gR.lockMyTargets.acquire(1)
-            gR.myTargets = {}#1:[-1500+i*10,1000,1200], 2:[900,0+i*10,1200], 3:[3600-i*5,3000-i*4,1200] }
+            gR.myTargets = {1:[-1500+i*10,1000,1200], 2:[900,0+i*10,1200], 3:[3600-i*5,3000-i*4,1200] }
             gR.lockMyTargets.release()
             gR.newTargetsFlag.set()
             
@@ -100,6 +100,7 @@ class DataTest(threading.Thread):
         if len(self.data) > 0:
             datum = self.data[0]
             out = {}
-            out[0] = [int(float(datum[0])), int(float(datum[1]))]
+            out[0] = [int(float(datum[0])) * 1000, int(float(datum[1])) * 1000]
+            print out
             del self.data[0]
         gR.myTargets = out

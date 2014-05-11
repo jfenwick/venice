@@ -235,7 +235,7 @@ class Emitter(object):
         
     def setAngle(self, angle):
         self.angle = int(float(self.defaultAngle)*float(self.rotationMod) + math.degrees(angle))
-        print "angle being set to: ", self.angle, " for emitter ", self.arrLocation
+        print "angle being set to: ", self.angle, " for emitter ", self.arrLocation, " located at ", self.phyLocation
         
     def commandSlaves(self):
         #print "slave commanded"
