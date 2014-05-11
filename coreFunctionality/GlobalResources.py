@@ -5,6 +5,7 @@ Created on May 8, 2014
 '''
 
 import threading
+import GlobalResources as gR
 
 myEStats = None
 lockMyEstates = threading.Lock()
