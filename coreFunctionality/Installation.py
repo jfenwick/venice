@@ -164,7 +164,7 @@ class Installation(threading.Thread):
                 gR.lockMyEstates.acquire(1)
                 try:
                     self.updateEmitters()
-                    gR.lockMyEstates.set()
+                    gR.emitterUpdatedFlag.set()
                 finally:
                     gR.lockMyEstates.release()
             if gR.newCommandFlag.isSet():
