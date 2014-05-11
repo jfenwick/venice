@@ -48,9 +48,13 @@ class ArduinoDriver(threading.Thread):
 	def run(self):
 		while not self._stopFlag.isSet():
 			if gR.emitterUpdatedFlag.isSet():
+				gR.lockMyEstates.acquire(1)
 				gR.emitterUpdatedFlag.clear()
-				self.unwrapEmitters(gR.myEStats.getStatuses())
-				self.updateArduinos()
+				try:
+					self.unwrapEmitters(gR.myEStats.getStatuses())
+					self.updateArduinos()
+				finally:
+					gR.lockMyEstates.release()
 
 	def stop(self):
 		self.close_ports()

@@ -161,8 +161,12 @@ class Installation(threading.Thread):
     def operate (self):
         while not self._stop.isSet():
             if self.obtainTargets():
-                self.updateEmitters()
-                gR.emitterUpdatedFlag.set()
+                gR.lockMyEstates.acquire(1)
+                try:
+                    self.updateEmitters()
+                    gR.lockMyEstates.set()
+                finally:
+                    gR.lockMyEstates.release()
             if gR.newCommandFlag.isSet():
                 self.followCommand()
                 self.updateEmitters()
