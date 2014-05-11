@@ -73,7 +73,6 @@ import TargetAcquisition as tA
 import time
 import commandClasses as cC
 import cascade
-import sensor
 
 if __name__ == '__main__':
     paths = []
@@ -90,7 +89,8 @@ if __name__ == '__main__':
     
     
     myTargetAcquisitionThread = tA.FakeData()
-    
+    #myTargetAcquisitionThread = tA.SensorData()
+
     myInstallationThread.start()
     myCommunicationThread.start()
 
