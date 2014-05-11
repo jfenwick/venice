@@ -80,6 +80,7 @@ class ArduinoDriver(threading.Thread):
 				angle = 135
 			elif angle < 45:
 				angle = 45
+
 			# store the servo and bulb data in our complex data array
 			servoArduinoId = int(float(e[servoArduinoIndex]))
 			servoPin = int(float(e[servoPinIndex]))
@@ -106,11 +107,13 @@ class ArduinoDriver(threading.Thread):
 				# the string of data sent over serial
 				# states and angles are padded to 3 spaces
 				for data in sorted_data:
+					print str(data[1])
 					serial_data = serial_data + str(data[1]).zfill(3)
 				serial_data = serial_data + "\0"
 				# send the data to an arduino
 				device.port.write(serial_data)
 				print serial_data
+				print 'hi'
 
 			# update the clock if you need a delay
 			self.last_update_time = time.clock()
